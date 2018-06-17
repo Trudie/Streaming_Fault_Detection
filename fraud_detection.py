@@ -1,5 +1,8 @@
 import pandas as pd
 import numpy as np
+import datalab.storage as gcs
+import os
+from io import StringIO
 
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
@@ -16,9 +19,9 @@ class fraud_detection():
         pass
         
     def load_stream(self, **kwargs):
-        path = kwargs['params']['path']        
-        streams = pd.read_json(path, lines=True)
-        streams = streams.head(100000)
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/disk/ru/My First Project-d1196e9f3e13.json'
+        s = str(gcs.Bucket('ru_test').item('streams').read_from(), 'utf-8')
+        streams = pd.read_json(StringIO(s), lines=True)
         streams['timestamp'] = pd.to_datetime(streams['timestamp'],
                                            format='%Y-%m-%d %H:%M:%S')
         streams.sort_values(by=['timestamp'], inplace=True)
@@ -27,8 +30,9 @@ class fraud_detection():
         return streams
 
     def load_users(self, **kwargs):
-        path = kwargs['params']['path']
-        users = pd.read_json(path, lines=True)
+        os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/disk/ru/My First Project-d1196e9f3e13.json'
+        s = str(gcs.Bucket('ru_test').item('users').read_from(), 'utf-8')
+        users = pd.read_json(StringIO(s), lines=True)
         return users
         
     def label(self, **kwargs):
@@ -114,5 +118,5 @@ class fraud_detection():
 
         # testing
         y_pred = clf.predict(X_test)
-        print(confusion_matrix(y_test, y_pred))
-
+        cf = pd.DataFrame(data=confusion_matrix(y_test, y_pred))
+        gcs.Bucket('ru_test').item('cf.csv').write_to(cf.to_csv(index=False),'text/csv')

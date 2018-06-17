@@ -1,5 +1,4 @@
 from airflow.operators.python_operator import PythonOperator
-
 from airflow.models import DAG
 from datetime import datetime, timedelta
 import os
@@ -18,14 +17,10 @@ default_args = {
 dag = DAG(
     dag_id='fraud_detection', default_args=default_args)
 
-
-load_stream.set_upstream(streams)
-
 load_stream = PythonOperator(
     task_id='load_stream',
     provide_context=True,
     python_callable=fd.load_stream,
-    params ={'path': os.path.join('/disk/ru', 'streams')},
     dag=dag)
 
 label = PythonOperator(
@@ -39,7 +34,6 @@ load_users = PythonOperator(
     task_id='load_users',
     provide_context=True,
     python_callable=fd.load_users,
-    params ={'path':os.path.join('/disk/ru', 'users')},
     dag=dag)
 
 build_model = PythonOperator(
